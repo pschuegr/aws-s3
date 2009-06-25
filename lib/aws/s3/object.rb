@@ -451,7 +451,8 @@ module AWS
       # where you are not sure if the key has been set, you can use the key_set? method. Objects must have a key
       # set to be saved onto S3. Objects which have already been saved onto S3 will always have their key set.
       def key
-        attributes['key'] or raise NoKeySpecified
+        k = attributes['key'] or raise NoKeySpecified
+        k.to_s
       end
       
       # Sets the key for the current object.
