@@ -1,3 +1,11 @@
+If this error looks familiar:
+
+HTTP session already opened - IOError
+
+and you are trying to store an object with AWS-S3 gem in a thread this is the solution:
+
+http://www.blik.it/2008/5/15/aws-s3-eoferror-sysread-error-and-ruby-threads
+
 = AWS::S3
 
 AWS::S3 is a Ruby library for Amazon's Simple Storage Service's REST API (http://aws.amazon.com/s3).
