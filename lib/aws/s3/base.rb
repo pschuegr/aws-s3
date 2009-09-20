@@ -55,7 +55,10 @@ module AWS #:nodoc:
     # details can be found in the docs for Connection::Management::ClassMethods.
     #
     # Extensive examples can be found in the README[link:files/README.html].
-    class Base      
+    class Base
+
+      cattr_accessor :current_host
+
       class << self
         # Wraps the current connection's request method and picks the appropriate response class to wrap the response in.
         # If the response is an error, it will raise that error as an exception. All such exceptions can be caught by rescuing
@@ -66,10 +69,13 @@ module AWS #:nodoc:
         def request(verb, path, options = {}, body = nil, attempts = 0, &block)
           Service.response = nil
           process_options!(options, verb)
-          response = response_class.new(connection.request(verb, path, options, body, attempts, &block))
+          response = response_class.new(connection.request(verb, path, options, body, attempts, current_host, &block))
           Service.response = response
 
           Error::Response.new(response.response).error.raise if response.error?
+          if attempts > 0 && !current_host.match(".#{DEFAULT_HOST}")
+            establish_connection!(:server => DEFAULT_HOST)
+          end
           response
         # Once in a while, a request to S3 returns an internal error. A glitch in the matrix I presume. Since these 
         # errors are few and far between the request method will rescue InternalErrors the first three times they encouter them
@@ -81,6 +87,13 @@ module AWS #:nodoc:
             attempts += 1
             retry
           end
+        rescue
+          raise unless response
+          if response.redirect?
+            new_host = response.parsed['endpoint']
+            establish_connection!(:server => new_host)
+          end
+          attempts == 3 || !response.redirect? ? raise : (attempts += 1; retry)
         end
 
         [:get, :post, :put, :delete, :head].each do |verb|
@@ -103,6 +116,15 @@ module AWS #:nodoc:
         #
         # Rather than infering the current bucket from the subdomain, the current class' bucket can be explicitly set with
         # set_current_bucket_to.
+
+        def current_host
+          @@current_host
+        end
+
+        def current_host=(host)
+          @@current_host = host
+        end
+
         def current_bucket
           connection.subdomain or raise CurrentBucketNotSpecified.new(connection.http.address)
         end
@@ -212,7 +234,15 @@ module AWS #:nodoc:
       
       private
         attr_reader :attributes
-        
+
+        def current_host
+          self.class.current_host
+        end
+
+        def current_host=(host)
+          self.class.current_host = host
+        end
+
         def connection
           self.class.connection
         end

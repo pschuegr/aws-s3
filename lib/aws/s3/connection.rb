@@ -23,7 +23,7 @@ module AWS
         connect
       end
           
-      def request(verb, path, headers = {}, body = nil, attempts = 0, &block)
+      def request(verb, path, headers = {}, body = nil, attempts = 0, current_host = nil, &block)
         body.rewind if body.respond_to?(:rewind) unless attempts.zero?      
         
         requester = Proc.new do 
@@ -31,7 +31,8 @@ module AWS
           request = request_method(verb).new(path, headers)
           ensure_content_type!(request)
           add_user_agent!(request)
-          authenticate!(request)
+          set_host!(request, current_host)
+          authenticate!(request, current_host)
           if body
             if body.respond_to?(:read)                                                                
               request.body_stream = body                                                           
@@ -55,21 +56,22 @@ module AWS
         @http = create_connection
         attempts == 3 ? raise : (attempts += 1; retry)
       end
-      
-      def url_for(path, options = {})
+
+      def url_for(path, current_host, options = {})
         authenticate = options.delete(:authenticated)
         # Default to true unless explicitly false
         authenticate = true if authenticate.nil? 
         path         = self.class.prepare_path(path)
         request      = request_method(:get).new(path, {})
-        query_string = query_string_authentication(request, options)
-        returning "#{protocol(options)}#{http.address}#{port_string}#{path}" do |url|
+        query_string = query_string_authentication(request, current_host, options)
+        returning "#{protocol(options)}#{get_host(current_host)}#{port_string}#{path}" do |url|
           url << "?#{query_string}" if authenticate
         end
       end
       
       def subdomain
-        http.address[/^([^.]+).#{DEFAULT_HOST}$/, 1]
+        subdomain = http.address.gsub("#{DEFAULT_HOST}", "").gsub(/.$/,'')
+        subdomain.empty? ? nil : subdomain
       end
       
       def persistent?
@@ -126,18 +128,26 @@ module AWS
         end
         
         # Just do Header authentication for now
-        def authenticate!(request)
-          request['Authorization'] = Authentication::Header.new(request, access_key_id, secret_access_key)
+        def authenticate!(request, current_host)
+          request['Authorization'] = Authentication::Header.new(request, access_key_id, secret_access_key, current_host)
         end
         
         def add_user_agent!(request)
           request['User-Agent'] ||= "AWS::S3/#{Version}"
         end
         
-        def query_string_authentication(request, options = {})
-          Authentication::QueryString.new(request, access_key_id, secret_access_key, options)
+        def set_host!(request, host)
+          request['Host'] = get_host(host)
         end
-
+        
+        def get_host(host)
+          (host && http.address.match(host)) ? http.address : host.nil? ? http.address : host.match(/amazonaws.com/) ? host : "#{host}.#{http.address}"
+        end
+        
+        def query_string_authentication(request, current_host, options = {})
+          Authentication::QueryString.new(request, access_key_id, secret_access_key, current_host, options)
+        end
+        
         def request_method(verb)
           Net::HTTP.const_get(verb.to_s.capitalize)
         end

@@ -64,6 +64,9 @@ Buckets are containers for objects (the files you store on S3). To create a new 
   # if the name is already taken.
   Bucket.create('jukebox')
 
+  # To create an European bucket.
+  Bucket.create('jukebox', :location => :eu)
+
 Bucket names must be unique across the entire S3 system, sort of like domain names across the internet. If you try
 to create a bucket with a name that is already taken, you will get an error.
 
