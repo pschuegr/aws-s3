@@ -278,6 +278,14 @@ class RemoteS3ObjectTest < Test::Unit::TestCase
     end
   end
   
+  def test_streaming_an_object_that_does_not_exist_raises_no_such_key
+    assert_raises(NoSuchKey) do
+      S3Object.stream('asdfasdfasdfas-this-does-not-exist', TEST_BUCKET) do
+        fail "Should never be called"
+      end
+    end
+  end
+  
   # Regression test for http://developer.amazonwebservices.com/connect/thread.jspa?messageID=49152&tstart=0#49152
   def test_finding_an_object_with_slashes_in_its_name_does_not_escape_the_slash
     S3Object.store('rails/1', 'value does not matter', TEST_BUCKET)

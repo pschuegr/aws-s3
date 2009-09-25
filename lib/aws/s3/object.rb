@@ -136,7 +136,11 @@ module AWS
         
         def stream(key, bucket = nil, options = {}, &block)
           value(key, bucket, options) do |response|
-            response.read_body(&block)
+            if (200..299).include? response.code.to_i
+              response.read_body(&block)
+            else
+              Error::Response.new(response).error.raise
+            end
           end
         end
         

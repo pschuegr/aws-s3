@@ -1,5 +1,7 @@
 head:
 
+- Fix that S3Object.stream raises NoSuchKey exception when trying to stream an object that doesn't exist.
+
 0.6.2:
 
 - Apparently need to use custom __method__ in Ruby versions right up to 1.8.7.
