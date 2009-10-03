@@ -188,7 +188,8 @@ module AWS
           options         = {:dest_bucket => bucket}.merge(options)
           bucket          = bucket_name(bucket)
           dest_bucket     = bucket_name(options[:dest_bucket])
-          source_key      = path!(bucket, key)
+          # source_key      = path!(bucket, key)
+          source_key      = "#{bucket}#{path!(bucket, key)}"
           default_options = {'x-amz-copy-source' => source_key}
           target_key      = path!(dest_bucket, copy_key)
           returning put(target_key, default_options) do
