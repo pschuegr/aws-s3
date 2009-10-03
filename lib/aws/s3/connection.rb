@@ -45,15 +45,14 @@ module AWS
           end
           http.request(request, &block)
         end
-      SEMAPHORE.synchronize { 
+        
         if persistent?
           http.start unless http.started?
           requester.call
         else
           http.start(&requester)
         end
-      }
-	  rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
         @http = create_connection
         attempts == 3 ? raise : (attempts += 1; retry)
       end
