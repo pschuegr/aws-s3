@@ -122,7 +122,8 @@ module AWS
         
         def initialize(attributes = {})
           @attributes = attributes
-          @grants     = [].extend(GrantListExtensions)
+          @grants     = []
+          @grants.extend(GrantListExtensions)
           extract_owner!  if owner?
           extract_grants! if grants?
         end
