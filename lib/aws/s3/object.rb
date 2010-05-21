@@ -191,6 +191,7 @@ module AWS
           # source_key      = path!(bucket, key)
           source_key      = "#{bucket}#{path!(bucket, key)}"
           default_options = {'x-amz-copy-source' => source_key}
+          default_options.merge!(options[:headers]) if options[:headers]
           target_key      = path!(dest_bucket, copy_key)
           returning put(target_key, default_options) do
             acl(copy_key, dest_bucket, acl(key, bucket)) if options[:copy_acl]
@@ -558,8 +559,9 @@ module AWS
       end
       
       # Copies current object to a new bucket
-      def copy_to_bucket(dest_bucket)
-        copy(nil, :dest_bucket => dest_bucket, :copy_acl => true)
+      def copy_to_bucket(dest_bucket, options={})
+        options = {:dest_bucket => dest_bucket, :copy_acl => true}.merge(options)
+        copy(nil, options)
       end
       
       # Copies the current object, given it the name <tt>copy_name</tt>.
