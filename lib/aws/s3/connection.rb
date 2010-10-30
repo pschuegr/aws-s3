@@ -20,10 +20,24 @@ module AWS
       # For details on establishing connections, check the Connection::Management::ClassMethods.
       def initialize(options = {})
         @options = Options.new(options)
+        Rails.logger.info <<-XXX
+AWS::S3::Connection#initialize
+- options: #{@options}
+        XXX
         connect
       end
           
       def request(verb, path, headers = {}, body = nil, attempts = 0, current_host = nil, &block)
+          Rails.logger.info <<-XXX
+AWS::S3::Connection#request
+- verb: #{verb}
+- path: #{path}
+- headers: #{headers}
+- body: #{!body.nil?}
+- attempts: #{attempts}
+- current_host: #{current_host}
+          XXX
+        
         body.rewind if body.respond_to?(:rewind) unless attempts.zero?      
         
         requester = Proc.new do 
