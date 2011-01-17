@@ -20,7 +20,7 @@ module AWS
       # For details on establishing connections, check the Connection::Management::ClassMethods.
       def initialize(options = {})
         @options = Options.new(options)
-				if defined? Rails && Rails.logger
+				if defined?(Rails) && !Rails.logger.nil?
 					Rails.logger.info <<-XXX
 AWS::S3::Connection#initialize
 - options: #{@options}
@@ -30,7 +30,7 @@ AWS::S3::Connection#initialize
       end
           
       def request(verb, path, headers = {}, body = nil, attempts = 0, current_host = nil, &block)
-				if defined? Rails && Rails.logger
+				if defined?(Rails) && !Rails.logger.nil?
           Rails.logger.info <<-XXX
 AWS::S3::Connection#request
 - verb: #{verb}
